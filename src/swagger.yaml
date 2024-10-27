@@ -1,0 +1,227 @@
+---
+openapi: 3.0.0
+info:
+  title: Points API
+  version: 1.0.0
+  description: API for managing points and user events
+
+paths:
+  /points:
+    post:
+      summary: Create a new point
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pointId
+                - name
+                - creator
+              properties:
+                pointId:
+                  type: string
+                name:
+                  type: string
+                creator:
+                  type: string
+      responses:
+        "201":
+          description: Point created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pointId:
+                    type: string
+
+  /points/{pointId}:
+    get:
+      summary: Get point information
+      parameters:
+        - name: pointId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Point information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  creator:
+                    type: string
+        "404":
+          description: Point not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /points/{pointId}/events:
+    get:
+      summary: Get events for a specific point
+      parameters:
+        - name: pointId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [add, remove]
+                    pointId:
+                      type: string
+                    amount:
+                      type: integer
+                    timestamp:
+                      type: integer
+                    userId:
+                      type: string
+
+    post:
+      summary: Add or remove points for a user
+      parameters:
+        - name: pointId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - amount
+                - userId
+              properties:
+                type:
+                  type: string
+                  enum: [add, remove]
+                amount:
+                  type: integer
+                  minimum: 1
+                userId:
+                  type: string
+      responses:
+        "201":
+          description: Points operation successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  pointId:
+                    type: string
+                  amount:
+                    type: integer
+                  userId:
+                    type: string
+
+  /points/{pointId}/leaderboard:
+    get:
+      summary: Get point leaderboard
+      parameters:
+        - name: pointId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+      responses:
+        "200":
+          description: Leaderboard retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                    points:
+                      type: integer
+
+  /users/{userId}:
+    get:
+      summary: Get user points
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User points retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  points:
+                    type: object
+                    additionalProperties:
+                      type: string
+
+  /users/{userId}/events:
+    get:
+      summary: Get user events
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [add, remove]
+                    pointId:
+                      type: string
+                    amount:
+                      type: integer
+                    timestamp:
+                      type: integer
