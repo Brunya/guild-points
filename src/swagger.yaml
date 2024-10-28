@@ -3,12 +3,12 @@ openapi: 3.0.0
 info:
   title: Points API
   version: 1.0.0
-  description: API for managing points and user events
+  description: API for managing points and user events in a Redis-backed system
 
 paths:
   /points:
     post:
-      summary: Create a new point
+      summary: Create a new point type
       requestBody:
         required: true
         content:
@@ -22,13 +22,16 @@ paths:
               properties:
                 pointId:
                   type: string
+                  description: Unique identifier for the point type
                 name:
                   type: string
+                  description: Name of the point type
                 creator:
                   type: string
+                  description: Creator of the point type
       responses:
         "201":
-          description: Point created successfully
+          description: Point type created successfully
           content:
             application/json:
               schema:
@@ -37,9 +40,28 @@ paths:
                   pointId:
                     type: string
 
+    get:
+      summary: Get all point types
+      responses:
+        "200":
+          description: List of all point types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    pointId:
+                      type: string
+                    name:
+                      type: string
+                    creator:
+                      type: string
+
   /points/{pointId}:
     get:
-      summary: Get point information
+      summary: Get point type information
       parameters:
         - name: pointId
           in: path
@@ -59,7 +81,7 @@ paths:
                   creator:
                     type: string
         "404":
-          description: Point not found
+          description: Point type not found
           content:
             application/json:
               schema:
@@ -70,7 +92,7 @@ paths:
 
   /points/{pointId}/events:
     get:
-      summary: Get events for a specific point
+      summary: Get events for a specific point type
       parameters:
         - name: pointId
           in: path
@@ -96,6 +118,7 @@ paths:
                       type: integer
                     timestamp:
                       type: integer
+                      description: Unix timestamp in milliseconds
                     userId:
                       type: string
 
@@ -129,19 +152,6 @@ paths:
       responses:
         "201":
           description: Points operation successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  pointId:
-                    type: string
-                  amount:
-                    type: integer
-                  userId:
-                    type: string
 
   /points/{pointId}/leaderboard:
     get:
@@ -173,6 +183,28 @@ paths:
                     points:
                       type: integer
 
+  /users:
+    get:
+      summary: Get all users and their points
+      responses:
+        "200":
+          description: List of all users and their points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                    name:
+                      type: string
+                    points:
+                      type: object
+                      additionalProperties:
+                        type: integer
+
   /users/{userId}:
     get:
       summary: Get user points
@@ -199,7 +231,7 @@ paths:
 
   /users/{userId}/events:
     get:
-      summary: Get user events
+      summary: Get user events history
       parameters:
         - name: userId
           in: path
@@ -225,3 +257,4 @@ paths:
                       type: integer
                     timestamp:
                       type: integer
+                      description: Unix timestamp in milliseconds

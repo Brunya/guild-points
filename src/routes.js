@@ -14,6 +14,14 @@ router.post(
 );
 
 router.get(
+  "/points",
+  asyncHandler(async (req, res) => {
+    const points = await services.getPoints();
+    res.json(points);
+  })
+);
+
+router.get(
   "/points/:pointId",
   asyncHandler(async (req, res) => {
     const { pointId } = req.params;
@@ -54,6 +62,14 @@ router.get(
     const { limit = 10 } = req.query;
     const leaderboard = await services.getLeaderboard(pointId, parseInt(limit));
     res.json(leaderboard);
+  })
+);
+
+router.get(
+  "/users",
+  asyncHandler(async (req, res) => {
+    const users = await services.getUsers();
+    res.json(users);
   })
 );
 

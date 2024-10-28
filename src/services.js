@@ -7,8 +7,18 @@ const createPoints = async (pointId, name, creator) => {
 };
 
 const getPoints = async () => {
-  const points = await redis.hGetAll(`point:*`);
-  return points;
+  const keys = await redis.keys("point:*");
+  const pointKeys = keys.filter((key) => key.match(/^point:[^:]+$/));
+
+  const pointsData = await Promise.all(
+    pointKeys.map(async (key) => {
+      const data = await redis.hGetAll(key);
+      const pointId = key.split(":")[1];
+      return { pointId, ...data };
+    })
+  );
+
+  return pointsData;
 };
 
 const getPointsInfo = async (pointId) => {
@@ -46,6 +56,32 @@ const removePoints = async (userId, pointId, amount) => {
     redis.lPush(`user:${userId}:events`, JSON.stringify(event)),
     redis.lPush(`point:${pointId}:events`, JSON.stringify({ ...event, userId })),
   ]);
+};
+
+const getUsers = async () => {
+  const userKeys = await redis.keys("user:*:points");
+
+  const users = await Promise.all(
+    userKeys.map(async (key) => {
+      const userId = key.split(":")[1];
+      const points = await redis.hGetAll(`user:${userId}:points`);
+      const userData = await redis.hGetAll(`user:${userId}`);
+
+      return {
+        userId,
+        name: userData.name || userId,
+        points: Object.entries(points).reduce(
+          (acc, [pointType, amount]) => ({
+            ...acc,
+            [pointType]: parseInt(amount),
+          }),
+          {}
+        ),
+      };
+    })
+  );
+
+  return users;
 };
 
 const getUserPoints = async (userId) => {
@@ -88,6 +124,7 @@ module.exports = {
   createPoints,
   getPointsInfo,
   getPoints,
+  getUsers,
   addPoints,
   removePoints,
   getLeaderboard,
