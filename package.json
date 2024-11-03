@@ -4,20 +4,28 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/run-load-test.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-async-handler": "^1.2.0",
     "express-validator": "^7.2.0",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "node-telegram-bot-api": "^0.66.0",
     "redis": "^4.7.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.0.2",
+    "winston": "^3.15.0",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

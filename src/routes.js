@@ -1,95 +1,72 @@
 const express = require("express");
 const asyncHandler = require("express-async-handler");
-const services = require("./services");
-const router = express.Router();
+const controllers = require("./controllers");
+const createAuthMiddleware = require("./middleware/auth");
+const validate = require("./middleware/validate");
+const { pointSchemas, eventSchemas } = require("./utils/schemas");
+const { errorMiddleware } = require("./utils/errorNotifier");
+// Route group definitions
+const createPointRoutes = (router) => {
+  router.route("/points").get(asyncHandler(controllers.getPoints)).post(asyncHandler(controllers.createPoint));
 
-// Point Routes
-router.post(
-  "/points",
-  asyncHandler(async (req, res) => {
-    const { pointId, name, creator } = req.body;
-    const result = await services.createPoints(pointId, name, creator);
-    res.status(201).json(result);
-  })
-);
+  router
+    .route("/points/:pointId")
+    .get(validate({ params: pointSchemas.params }), asyncHandler(controllers.getPointInfo))
+    .delete(validate({ params: pointSchemas.params }), asyncHandler(controllers.deletePoint));
 
-router.get(
-  "/points",
-  asyncHandler(async (req, res) => {
-    const points = await services.getPoints();
-    res.json(points);
-  })
-);
+  router.get(
+    "/points/:pointId/leaderboard",
+    validate({ params: pointSchemas.params }),
+    asyncHandler(controllers.getPointLeaderboard)
+  );
 
-router.get(
-  "/points/:pointId",
-  asyncHandler(async (req, res) => {
-    const { pointId } = req.params;
-    const point = await services.getPointsInfo(pointId);
-    if (!point) return res.status(404).json({ error: "Point not found" });
-    res.json(point);
-  })
-);
+  router.get("/points/:pointId/events", asyncHandler(controllers.getEvents));
+};
 
-router.get(
-  "/points/:pointId/events",
-  asyncHandler(async (req, res) => {
-    const { pointId } = req.params;
-    const events = await services.getPointEvents(pointId);
-    res.json(events);
-  })
-);
+const createUserRoutes = (router) => {
+  router.route("/users").get(asyncHandler(controllers.getUsers)).post(asyncHandler(controllers.createUser));
 
-router.post(
-  "/points/:pointId/events",
-  asyncHandler(async (req, res) => {
-    const { pointId } = req.params;
-    const { type, amount, userId } = req.body;
-    let result;
-    if (type === "add") {
-      result = await services.addPoints(userId, pointId, amount);
-    } else if (type === "remove") {
-      result = await services.removePoints(userId, pointId, amount);
-    }
-    res.status(201).json(result);
-  })
-);
+  router.route("/users/:userId").get(asyncHandler(controllers.getUserPoints));
 
-router.get(
-  "/points/:pointId/leaderboard",
-  asyncHandler(async (req, res) => {
-    const { pointId } = req.params;
-    const { limit = 10 } = req.query;
-    const leaderboard = await services.getLeaderboard(pointId, parseInt(limit));
-    res.json(leaderboard);
-  })
-);
+  router.get("/users/:userId/events", asyncHandler(controllers.getUserEvents));
+};
 
-router.get(
-  "/users",
-  asyncHandler(async (req, res) => {
-    const users = await services.getUsers();
-    res.json(users);
-  })
-);
+const createEventRoutes = (router) => {
+  router.route("/events").get(asyncHandler(controllers.getEvents)).post(asyncHandler(controllers.createEvent));
 
-// User Routes
-router.get(
-  "/users/:userId",
-  asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const points = await services.getUserPoints(userId);
-    res.json(points);
-  })
-);
+  router
+    .route("/events/:eventId")
+    .put(asyncHandler(controllers.updateEvent))
+    .delete(asyncHandler(controllers.deleteEvent));
+};
 
-router.get(
-  "/users/:userId/events",
-  asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const events = await services.getUserEvents(userId);
-    res.json(events);
-  })
-);
+const createMiscRoutes = (router) => {
+  router.get("/feed", controllers.handleEventsFeed);
+  router.get("/stats", asyncHandler(controllers.getStats));
+};
 
-module.exports = router;
+// Router initialization and configuration
+const initializeRouter = () => {
+  const router = express.Router();
+
+  // Apply auth middleware to all routes
+  router.use(createAuthMiddleware());
+
+  // Initialize route groups
+  createPointRoutes(router);
+  createUserRoutes(router);
+  createEventRoutes(router);
+  createMiscRoutes(router);
+
+  // Error handling should be last
+  router.use((err, req, res, next) => {
+    console.log("Router error caught:", err);
+    next(err);
+  });
+
+  router.use(errorMiddleware);
+
+  return router;
+};
+
+module.exports = initializeRouter();
